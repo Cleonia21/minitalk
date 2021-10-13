@@ -1,21 +1,45 @@
 #include "libs.h"
 
+void empty(int sig, siginfo_t *info, void *context)
+{
+	(void)sig;
+	(void)context;
+	(void)info;
+}
+
 int main(int argc, char **argv)
 {
-	int serv_pid;
+	int i;
+	struct sigaction act;
 	char *str;
+	int serv_pid;
 
-	serv_pid = ft_atoi(argv[1]);
+	memset(&act, '\0', sizeof(act));
+	act.__sigaction_u.__sa_sigaction = empty;
+	act.sa_flags = SA_SIGINFO;
+	serv_pid = atoi(argv[1]);
 	str = argv[2];
-
+	if (sigaction(SIGUSR1, &act, NULL) < 0)
+		return (0);
 	while (*str)
 	{
-		if (*str == '0')
-			kill(serv_pid, SIGUSR1);
-		if (*str == '1')
-			kill(serv_pid, SIGUSR2);
+		i = 128;
+		while (i > 0)
+		{
+			if (i & (unsigned char)*str)
+			{
+				if (kill(serv_pid, SIGUSR1) == -1)
+					return (0);
+			}
+			else
+			{
+				if (kill(serv_pid, SIGUSR2) == -1)
+					return (0);
+			}
+			i /= 2;
+			pause();
+		}
 		str++;
-		usleep(1);
 	}
-	//printf("server pid: {%i}\n", serv_pid);
+	return (0);
 }
